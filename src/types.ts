@@ -32,4 +32,6 @@ export type TPbkProject = {
  */
 export type TPbkConfig = {
     projects: TPbkProject[];
+    b2fPortal: boolean;
+    checkCrossProjectImports: boolean;
 };

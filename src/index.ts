@@ -7,68 +7,59 @@ import * as path from 'path';
 import { TPbkConfig, TPbkProject } from './types.js';
 import { b2fPortalInit } from './b2fPortalV3/b2fPortal.js';
 import { checkCrossProjectImportsFun } from './helpers/checkCrossProjectImports.js';
+import { loadConfig } from './utils/loadConfig.js';
+
 
 export function greet(name: string): string {
   return `Hello, ${name}!`;
 }
 
 /**
- * Initializes the primexop-backend-kit by checking for a pbk.config.ts file
- * in the repository root and loading the configuration.
+ * Initializes the primexop-backend-kit by loading configuration from a JSON file.
+ * This is the primary initialization method for the library.
  * 
- * @returns {Promise<TPbkConfig | null>} The loaded configuration or null if not found
+ * @param {Object} options - Initialization options
+ * @param {string} [options.configPath] - Path to the JSON config file (defaults to pbk.config.json in current directory)
+ * @returns {TPbkConfig} The loaded and validated configuration
+ * @throws {Error} If the configuration is invalid or file doesn't exist
  */
+export function pbkInit(options: {
+  configPath?: string;
+} = {}): TPbkConfig {
+  // Set default options
+  const { configPath = path.join(process.cwd(), 'pbk.config.json') } = options;
 
-type TPbkInit ={
-  projects:TPbkProject[],
-  b2fPortal:boolean,
-  checkCrossProjectImports:boolean,
- 
-}
-export async function pbkInit({projects,b2fPortal,checkCrossProjectImports}:TPbkInit): Promise<null|void> {
- 
   try {
-   
-    if (!Array.isArray(projects)) {
-      console.error('Config file does not export a default array of projects');
-      return null;
+    // Load and validate config
+    const config = loadConfig(configPath);
+    if(!config){
+      return {} as TPbkConfig;
     }
-    
-    // Validate the configuration structure
-    for (let i = 0; i < projects.length; i++) {
-      const project = projects[i];
-      if (!project.projectName || !project.projectBaseDirPath || !Array.isArray(project.sections)) {
-        console.error(`Invalid project configuration at index ${i}: missing required fields`);
-        return null;
-      }
-      
-      for (let j = 0; j < project.sections.length; j++) {
-        const section = project.sections[j];
-        if (!section.sectionName || !section.repository || !section.localPath || typeof section.isZodCreator !== 'boolean') {
-          console.error(`Invalid section configuration in project "${project.projectName}" at index ${j}: missing required fields`);
-          return null;
-        }
-      }
+    console.log(`Successfully loaded configuration with ${config.projects.length} projects`);
+
+    // Initialize features based on config flags
+    if (config.b2fPortal) {
+      b2fPortalInit(config.projects);
     }
-    
-    console.log(`Loaded configuration with ${projects.length} projects`);
-if(b2fPortal){
-  b2fPortalInit(projects )
-}
 
-if(checkCrossProjectImports){
-  checkCrossProjectImportsFun(projects)
-}
+    if (config.checkCrossProjectImports) {
+      checkCrossProjectImportsFun(config.projects);
+    }
 
-
+    return config;
   } catch (error) {
-    console.error(`Error loading config file:`, error);
-    return null;
+    console.error('Failed to initialize primexop-backend-kit:', error);
+    throw error;
   }
 }
+
+
+
+// Export the loadConfig function to make it available for direct use
+export { loadConfig } 
 
 // When using ES modules with TypeScript, you need to include the .js extension
 // in import statements, even though the source file has a .ts extension
 // This is because Node.js will look for .js files at runtime
-export * from './utils.js';
+
 export * from './types.js';
