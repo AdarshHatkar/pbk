@@ -5,6 +5,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { TPbkConfig, TPbkProject } from './types.js';
+import { b2fPortalInit } from './b2fPortalV3/b2fPortal.js';
+import { checkCrossProjectImportsFun } from './helpers/checkCrossProjectImports.js';
 
 export function greet(name: string): string {
   return `Hello, ${name}!`;
@@ -18,9 +20,12 @@ export function greet(name: string): string {
  */
 
 type TPbkInit ={
-  projects:TPbkProject[]
+  projects:TPbkProject[],
+  b2fPortal:boolean,
+  checkCrossProjectImports:boolean,
+ 
 }
-export async function pbkInit({projects}:TPbkInit): Promise<TPbkProject[] | null> {
+export async function pbkInit({projects,b2fPortal,checkCrossProjectImports}:TPbkInit): Promise<null|void> {
  
   try {
    
@@ -47,7 +52,15 @@ export async function pbkInit({projects}:TPbkInit): Promise<TPbkProject[] | null
     }
     
     console.log(`Loaded configuration with ${projects.length} projects`);
-    return projects;
+if(b2fPortal){
+  b2fPortalInit(projects )
+}
+
+if(checkCrossProjectImports){
+  checkCrossProjectImportsFun(projects)
+}
+
+
   } catch (error) {
     console.error(`Error loading config file:`, error);
     return null;

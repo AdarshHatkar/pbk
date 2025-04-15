@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "husky": "^9.1.7",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "simple-git": "^3.27.0"
   }
 }
