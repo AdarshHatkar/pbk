@@ -1,5 +1,9 @@
 {
     "cSpell.words": [
         "primexop"
-    ]
+    ],
+    "files.associations": {
+        "pbk.config.json": "jsonc"
+    },
+
 }
