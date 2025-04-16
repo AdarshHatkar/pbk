@@ -1,6 +1,7 @@
 import path from "path";
 import { TPbkConfig, TPbkProject, TPbkProjectSection } from "../types.js";
 import fs from "fs";
+import { stripComments } from "./jsonFile.js";
 
 /**
  * Creates a visually distinct, colorful error message for config file not found errors
@@ -89,23 +90,7 @@ ${red}${separator}${reset}
 `;
 }
 
-/**
- * Strips comments from a JSON string
- * @param jsonString - The JSON string that may contain comments
- * @returns JSON string with comments removed
- */
-function stripComments(jsonString: string): string {
-  // Remove single line comments
-  let stripped = jsonString.replace(/\/\/.*$/gm, '');
-  
-  // Remove multi-line comments
-  stripped = stripped.replace(/\/\*[\s\S]*?\*\//g, '');
-  
-  // Remove trailing commas before closing braces/brackets
-  stripped = stripped.replace(/,(\s*[}\]])/g, '$1');
-  
-  return stripped;
-}
+
 
 /**
  * Loads and validates the PBK configuration from a JSON file
