@@ -11,33 +11,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Calculate common paths
-export const rootDirPath = join(__dirname, '..', '..'); // Up two levels from src/utils to project root
-export const srcDirPath = join(rootDirPath, 'src');
-export const distDirPath = join(rootDirPath, 'dist');
+export const packageRootDirPath = join(__dirname, '..', '..'); 
+export const packageSrcDirPath = join(packageRootDirPath, 'src');
+export const packageDistDirPath = join(packageRootDirPath, 'dist');
 
-/**
- * Resolves a path relative to the project root
- * @param relativePath - Path relative to the project root
- * @returns Absolute path
- */
-export function resolveFromRoot(relativePath: string): string {
-  return join(rootDirPath, relativePath);
-}
-
-/**
- * Resolves a path relative to the src directory
- * @param relativePath - Path relative to the src directory
- * @returns Absolute path
- */
-export function resolveFromSrc(relativePath: string): string {
-  return join(srcDirPath, relativePath);
-}
-
-/**
- * Resolves a path relative to the dist directory
- * @param relativePath - Path relative to the dist directory
- * @returns Absolute path
- */
-export function resolveFromDist(relativePath: string): string {
-  return join(distDirPath, relativePath);
-}
+export const  clientRootDirPath = process.cwd()
+export const clientSrcDirPath = join(clientRootDirPath, 'src');
+export const clientDistDirPath = join(clientRootDirPath, 'dist');
