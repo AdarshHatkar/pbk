@@ -55,8 +55,7 @@ export function pbkInit(options: {
 
 
 
-// Export the loadConfig function to make it available for direct use
-export { loadConfig } 
+
 
 // When using ES modules with TypeScript, you need to include the .js extension
 // in import statements, even though the source file has a .ts extension
