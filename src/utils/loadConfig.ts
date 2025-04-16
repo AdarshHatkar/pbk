@@ -90,6 +90,24 @@ ${red}${separator}${reset}
 }
 
 /**
+ * Strips comments from a JSON string
+ * @param jsonString - The JSON string that may contain comments
+ * @returns JSON string with comments removed
+ */
+function stripComments(jsonString: string): string {
+  // Remove single line comments
+  let stripped = jsonString.replace(/\/\/.*$/gm, '');
+  
+  // Remove multi-line comments
+  stripped = stripped.replace(/\/\*[\s\S]*?\*\//g, '');
+  
+  // Remove trailing commas before closing braces/brackets
+  stripped = stripped.replace(/,(\s*[}\]])/g, '$1');
+  
+  return stripped;
+}
+
+/**
  * Loads and validates the PBK configuration from a JSON file
  * @param configPath - Path to the config file (optional, defaults to pbk.config.json in current directory)
  * @returns Validated TPbkConfig object
@@ -104,9 +122,12 @@ export function loadConfig(configPath: string = path.join(process.cwd(), 'pbk.co
         throw new Error(`Configuration file not found: ${configPath}`);
       }
   
-      // Read and parse JSON file
+      // Read file and strip comments
       const configString = fs.readFileSync(configPath, 'utf8');
-      const config = JSON.parse(configString) as TPbkConfig;
+      const strippedConfig = stripComments(configString);
+      
+      // Parse JSON file
+      const config = JSON.parse(strippedConfig) as TPbkConfig;
   
       // Validate the entire config structure
       try {
