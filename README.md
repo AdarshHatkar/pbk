@@ -14,7 +14,7 @@ A utility package for managing backend projects with TypeScript support. This ki
 ## Installation
 
 ```bash
-npm install pbk
+npm install @primexop/pbk --save-dev
 ```
 
 ## Requirements
@@ -113,7 +113,7 @@ Benefits:
 ### API Usage
 
 ```typescript
-import { pbkInit } from 'pbk';
+import { pbkInit } from '@primexop/pbk';
 
 // Initialize with default config path (pbk.config.json in current directory)
 const config = pbkInit();

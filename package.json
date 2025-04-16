@@ -1,5 +1,5 @@
 {
-  "name": "pbk",
+  "name": "@primexop/pbk",
   "version": "1.0.0",
   "description": "Primexop Backend Kit",
   "type": "module",
