@@ -1,47 +1,49 @@
 {
-  "b2fPortal": false,
+  "b2fPortal": true,
   "checkCrossProjectImports": true,
   "projects": [
-    {
-      "projectName": "Example Project",
-      "projectBaseDirPath": "C:/projects/example",
-      "sharedBackendPath": "C:/projects/example/shared-backend",
-      "sections": [
-        {
-          "sectionName": "API",
-          "repository": {
-            "name": "example-api",
-            "path": "https://github.com/organization/example-api"
-          },
-          "localPath": "C:/projects/example/api",
-          "isZodCreator": true
-        },
-        {
-          "sectionName": "Frontend",
-          "repository": {
-            "name": "example-frontend",
-            "path": "https://github.com/organization/example-frontend"
-          },
-          "localPath": "C:/projects/example/frontend",
-          "isZodCreator": false,
-          "needNextJsPatch": true
-        }
-      ]
-    },
-    {
-      "projectName": "Another Project",
-      "projectBaseDirPath": "C:/projects/another",
-      "sections": [
-        {
-          "sectionName": "Backend",
-          "repository": {
-            "name": "another-backend",
-            "path": "https://github.com/organization/another-backend"
-          },
-          "localPath": "C:/projects/another/backend",
-          "isZodCreator": true
-        }
-      ]
-    }
+      {
+          "projectName": "demo_project",
+          "projectBaseDirPath": "demo_project",
+          "sharedBackendPath": "../../shared_one/backend",
+          "sections": [
+              {
+                  "sectionName": "masterPanel",
+                  "localPath": "masterPanel",
+                  "repository": {
+                      "name": "demo_project_master_panel",
+                      "path": "../../demo_project/master_panel"
+                  },
+                  "isZodCreator": true
+              },
+              {
+                  "sectionName": "adminPanel",
+                  "localPath": "adminPanel",
+                  "repository": {
+                      "name": "demo_project_admin_panel",
+                      "path": "../../demo_project/admin_panel"
+                  },
+                  "isZodCreator": true
+              },
+              {
+                  "sectionName": "staffPanel",
+                  "localPath": "staffPanel",
+                  "repository": {
+                      "name": "demo_project_staff_panel",
+                      "path": "../../demo_project/staff_panel"
+                  },
+                  "isZodCreator": true
+              },
+              {
+                  "sectionName": "webApp",
+                  "localPath": "webApp",
+                  "repository": {
+                      "name": "demo_project_web_app",
+                      "path": "../../demo_project/web_app"
+                  },
+                  "isZodCreator": true
+              }
+          ]
+      }
   ]
 }

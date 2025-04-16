@@ -6,7 +6,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "pbk.schema.json"
   ],
   "exports": {
     ".": {
@@ -31,7 +32,13 @@
     "lint": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
-  "keywords": [],
+  "keywords": [
+    "backend",
+    "kit",
+    "primexop",
+    "typescript",
+    "node"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
