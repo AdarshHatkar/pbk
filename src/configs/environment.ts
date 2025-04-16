@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 /**
- * Environment configuration for primexop-backend-kit
+ * Environment configuration for pbk
  */
 
 // Flag to determine if the current user is Adarsh (for restricted operations)

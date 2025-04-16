@@ -1,5 +1,5 @@
 /**
- * Type definitions for primexop-backend-kit
+ * Type definitions for pbk
  */
 
 /**

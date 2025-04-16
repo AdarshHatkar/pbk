@@ -15,7 +15,7 @@ export function greet(name: string): string {
 }
 
 /**
- * Initializes the primexop-backend-kit by loading configuration from a JSON file.
+ * Initializes the pbk by loading configuration from a JSON file.
  * This is the primary initialization method for the library.
  * 
  * @param {Object} options - Initialization options
@@ -48,7 +48,7 @@ export function pbkInit(options: {
 
     return config;
   } catch (error) {
-    console.error('Failed to initialize primexop-backend-kit:', error);
+    console.error('Failed to initialize pbk:', error);
     throw error;
   }
 }
