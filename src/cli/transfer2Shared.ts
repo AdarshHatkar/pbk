@@ -4,10 +4,17 @@ import { join } from "path";
 import { clientRootDirPath, clientSrcDirPath } from "../utils/path.js";
 import { simpleGit, SimpleGit, SimpleGitOptions } from "simple-git";
 import { isDeveloperAdarsh } from "../configs/environment.js";
-import { b2fPortalProjects } from "../b2fPortalV3Config.js";
+;
 import { deleteAndCopy } from "./deleteAndCopy.js";
+import { loadConfig } from "../utils/loadConfig.js";
+import { TPbkProject } from "../types.js";
 
 export const transfer2Shared = async () => {
+    // Load projects from the configuration file
+const config = loadConfig();
+
+// Export projects for use in CLI tools
+ let b2fPortalProjects: TPbkProject[] = config.projects;
     console.log("------------transfer2Shared Started-------------");
 
     try {

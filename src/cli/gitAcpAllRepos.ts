@@ -5,10 +5,17 @@ import readline from "node:readline";
 import { clientRootDirPath } from "../utils/path.js";
 import { simpleGit, SimpleGit, SimpleGitOptions } from "simple-git";
 import { isDeveloperAdarsh } from "../configs/environment.js";
-import { b2fPortalProjects } from "../b2fPortalV3Config.js";
+import { TPbkProject } from "../types.js";
+import { loadConfig } from "../utils/loadConfig.js";
 
 const getAllPaths = () => {
     try {
+           // Load projects from the configuration file
+const config = loadConfig();
+
+// Export projects for use in CLI tools
+ let b2fPortalProjects: TPbkProject[] = config.projects;
+ 
         const allPaths = [];
         allPaths.push(clientRootDirPath);
         for (const project of b2fPortalProjects) {
@@ -115,6 +122,8 @@ const runAcpCommands = async (repoPath: string, message: string) => {
 };
 
 export const gitAcpAllRepos = async () => {
+  
+
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,

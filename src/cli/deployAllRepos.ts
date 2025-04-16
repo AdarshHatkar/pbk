@@ -5,10 +5,17 @@ import { execSync } from "child_process";
 import { clientRootDirPath } from "../utils/path.js";
 import { simpleGit, SimpleGit, SimpleGitOptions } from "simple-git";
 import { isDeveloperAdarsh } from "../configs/environment.js";
-import { b2fPortalProjects } from "../b2fPortalV3Config.js";
+import { loadConfig } from "../utils/loadConfig.js";
+import { TPbkProject } from "../types.js";
 
 const getAllPaths = () => {
     try {
+           // Load projects from the configuration file
+const config = loadConfig();
+
+// Export projects for use in CLI tools
+ let b2fPortalProjects: TPbkProject[] = config.projects;
+ 
         const allPaths = [];
         allPaths.push(clientRootDirPath);
         for (const project of b2fPortalProjects) {

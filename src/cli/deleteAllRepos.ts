@@ -3,7 +3,8 @@ import { promises as fs } from "fs";
 import { join } from "path";
 import { clientRootDirPath } from "../utils/path.js";
 import { isDeveloperAdarsh } from "../configs/environment.js";
-import { b2fPortalProjects } from "../b2fPortalV3Config.js";
+import { loadConfig } from "../utils/loadConfig.js";
+import { TPbkProject } from "../types.js";
 
 // Function to delete all files and directories within /b2fPortal
 async function deleteB2fPortal(repoPath: string): Promise<void> {
@@ -42,6 +43,11 @@ async function deleteB2fPortal(repoPath: string): Promise<void> {
 }
 
 export async function deleteAllRepos(): Promise<void> {
+       // Load projects from the configuration file
+const config = loadConfig();
+
+// Export projects for use in CLI tools
+ let b2fPortalProjects: TPbkProject[] = config.projects;
  console.log("------------deleteAllRepos Started-------------");
 
  

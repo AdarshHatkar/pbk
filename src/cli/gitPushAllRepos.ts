@@ -4,11 +4,14 @@ import { simpleGit, SimpleGit, SimpleGitOptions } from "simple-git";
 import { clientRootDirPath } from "../utils/path.js";
 import dotenv from "dotenv";
 import { isDeveloperAdarsh } from "../configs/environment.js";
-import { b2fPortalProjects } from "../b2fPortalV3Config.js";
+import { loadConfig } from "../utils/loadConfig.js";
+import { TPbkProject } from "../types.js";
+
 
 dotenv.config();
 
 async function commitB2fPortalChanges(repoPath: string) {
+
     const options: Partial<SimpleGitOptions> = {
         baseDir: path.resolve(repoPath),
         binary: "git",
@@ -62,6 +65,11 @@ async function commitB2fPortalChanges(repoPath: string) {
 }
 
 export async function gitPushAllRepos() {
+     // Load projects from the configuration file
+const config = loadConfig();
+
+// Export projects for use in CLI tools
+ let b2fPortalProjects: TPbkProject[] = config.projects;
     for (const project of b2fPortalProjects) {
         for (const section of project.sections) {
             if (isDeveloperAdarsh) {
