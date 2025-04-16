@@ -1,6 +1,6 @@
 {
   "name": "@primexop/pbk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Primexop Backend Kit",
   "type": "module",
   "main": "dist/index.js",
