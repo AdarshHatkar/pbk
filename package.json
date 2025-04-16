@@ -1,7 +1,7 @@
 {
-  "name": "primexop-backend-kit",
+  "name": "pbk",
   "version": "1.0.0",
-  "description": "A basic TypeScript package with ESM support",
+  "description": "Primexop Backend Kit",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

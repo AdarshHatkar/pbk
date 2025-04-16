@@ -5,7 +5,7 @@ A utility package for managing backend projects.
 ## Installation
 
 ```bash
-npm install primexop-backend-kit
+npm install pbk
 ```
 
 ## Usage
@@ -15,7 +15,7 @@ npm install primexop-backend-kit
 Create a `pbk.config.ts` file in your project root:
 
 ```typescript
-import { TPbkConfig } from 'primexop-backend-kit';
+import { TPbkConfig } from 'pbk';
 
 const config: TPbkConfig = [
   {
@@ -45,7 +45,7 @@ export default config;
 The `pbkInit` function checks for and loads your configuration file:
 
 ```typescript
-import { pbkInit } from 'primexop-backend-kit';
+import { pbkInit } from 'pbk';
 
 async function main() {
   const config = await pbkInit();
