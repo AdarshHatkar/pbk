@@ -16,7 +16,7 @@
     }
   },
   "bin": {
-    "pbk": "./dist/bin/pbk.js"
+    "@primexop/pbk": "./dist/bin/pbk.js"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -26,6 +26,7 @@
     "dev": "npm run clean && tsc -w",
     "clean": "rimraf dist && tsc",
     "release:patch": "npm version patch",
+    "postversion": "git push && git push --tags && npm publish",
     "build": "npm run clean && tsc",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -5,7 +5,7 @@ import { deployAllRepos } from '../cli/deployAllRepos.js';
 import { gitAcpAllRepos } from '../cli/gitAcpAllRepos.js';
 import { gitPushAllRepos } from '../cli/gitPushAllRepos.js';
 import { transfer2Shared } from '../cli/transfer2Shared.js';
-
+import { initConfig } from '../cli/initConfig.js';
 
 import packageJson from '../../package.json' with { type: "json" };
 
@@ -13,6 +13,13 @@ program
   .name('pbk')
   .version(packageJson.version)
   .description('PrimeXOP Backend Kit - CLI Tool');
+
+program
+  .command('init')
+  .description('Initialize an empty pbk.config.json file in the project root')
+  .action(async () => {
+    await initConfig();
+  });
 
 program
   .command('delete-all-repos')
