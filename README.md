@@ -159,6 +159,34 @@ npx @primexop/pbk transfer-2-shared
 
 # Create a shell script to initialize workspaces
 npx @primexop/pbk create-init-workspace-shell-file
+
+# Update package.json to use local development version
+npx @primexop/pbk add-dev-version
+
+# Update package.json to use published production version
+npx @primexop/pbk add-prod-version
+```
+
+### Development and Production Versioning
+
+PBK provides commands to easily switch between development and production versions:
+
+- `add-dev-version` updates your project to use the local development version from `C:/primexopRepos/pbk`
+- `add-prod-version` reverts back to using the published npm version (latest by default)
+
+Examples:
+```bash
+# Switch to local development version
+npx @primexop/pbk add-dev-version
+
+# Switch back to latest published version
+npx @primexop/pbk add-prod-version
+
+# Switch to a specific published version
+npx @primexop/pbk add-prod-version --version "1.0.7"
+
+# Apply to a different directory
+npx @primexop/pbk add-prod-version --dir ../other-project
 ```
 
 ### Workspace Initialization Script
