@@ -131,6 +131,56 @@ When `checkCrossProjectImports` is enabled, the kit will validate imports betwee
 ### Next.js Patch Support
 Sections can be configured with `needNextJsPatch: true` to apply Next.js specific patches.
 
+## 🛠️ CLI Commands
+
+PBK comes with several CLI commands to help you manage your projects:
+
+```bash
+# Initialize a pbk.config.json file
+npx @primexop/pbk init
+
+# Fix JSON file formatting
+npx @primexop/pbk fix-config-file
+
+# Delete b2fPortal directory in all repositories
+npx @primexop/pbk delete-all-repos
+
+# Deploy all repositories
+npx @primexop/pbk deploy-all-repos
+
+# Add, commit, and push changes in all repositories
+npx @primexop/pbk git-acp-all-repos
+
+# Push b2fPortal changes in all repositories
+npx @primexop/pbk git-push-all-repos
+
+# Transfer project files to shared backend repositories
+npx @primexop/pbk transfer-2-shared
+
+# Create a shell script to initialize workspaces
+npx @primexop/pbk create-init-workspace-shell-file
+```
+
+### Workspace Initialization Script
+
+The `create-init-workspace-shell-file` command generates a shell script (`initWorkspace.sh`) that helps you:
+
+- Select your preferred editor (VSCode, Cursor, or Trae)
+- Open all your project directories in the selected editor
+- Navigate between project sections easily
+
+After generating the script, make it executable:
+
+```bash
+chmod +x initWorkspace.sh
+```
+
+Then run it:
+
+```bash
+./initWorkspace.sh
+```
+
 ## 👩‍💻 Development
 
 ### Available Scripts

@@ -7,6 +7,7 @@ import { gitPushAllRepos } from '../cli/gitPushAllRepos.js';
 import { transfer2Shared } from '../cli/transfer2Shared.js';
 import { initConfig } from '../cli/initConfig.js';
 import { fixConfigFile } from '../cli/fixConfigFile.js';
+import { createInitWorkspaceShellFile } from '../cli/createInitWorkspaceShellFile.js';
 import '../utils/progress.js';
 
 import packageJson from '../../package.json' with { type: "json" };
@@ -64,6 +65,13 @@ program
   .description('Transfer project files to shared backend repositories')
   .action(async () => {
     await transfer2Shared();
+  });
+
+program
+  .command('create-init-workspace-shell-file')
+  .description('Create a shell script to initialize and open project workspaces')
+  .action(async () => {
+    await createInitWorkspaceShellFile();
   });
 
 program.parseAsync(process.argv);
