@@ -6,6 +6,7 @@ import { gitAcpAllRepos } from '../cli/gitAcpAllRepos.js';
 import { gitPushAllRepos } from '../cli/gitPushAllRepos.js';
 import { transfer2Shared } from '../cli/transfer2Shared.js';
 import { initConfig } from '../cli/initConfig.js';
+import '../utils/progress.js';
 
 import packageJson from '../../package.json' with { type: "json" };
 

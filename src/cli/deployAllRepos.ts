@@ -7,6 +7,7 @@ import { simpleGit, SimpleGit, SimpleGitOptions } from "simple-git";
 import { isDeveloperAdarsh } from "../configs/environment.js";
 import { loadConfig } from "../utils/loadConfig.js";
 import { TPbkProject } from "../types.js";
+import { createMultiProgress, startProgress, successProgress, failProgress, withProgress } from "../utils/progress.js";
 
 const getAllPaths = () => {
     try {
@@ -71,7 +72,8 @@ const checkRepo = async (repoPath: string) => {
             console.log({ repoPath });
             return;
         }
-        console.log(`Checking Repo: ${repositoryPackageJson.name} Started`);
+        
+        const spinner = startProgress(`Checking Repo: ${repositoryPackageJson.name}`);
 
         const options: Partial<SimpleGitOptions> = {
             baseDir: path.resolve(repoPath),
@@ -79,10 +81,10 @@ const checkRepo = async (repoPath: string) => {
             maxConcurrentProcesses: 6,
         };
         const git: SimpleGit = simpleGit(options);
-        console.log(`${repositoryPackageJson.name}: fetching ...`);
+        spinner.text = `${repositoryPackageJson.name}: fetching ...`;
 
         await git.fetch();
-        console.log(`${repositoryPackageJson.name}: Checking status ...`);
+        spinner.text = `${repositoryPackageJson.name}: Checking status ...`;
 
         let status = await git.status();
 
@@ -92,46 +94,45 @@ const checkRepo = async (repoPath: string) => {
         // console.log(currentBranch);
 
         if (currentBranch !== "main") {
-            console.error(`Current branch is ${currentBranch}, but it should be main.`);
+            failProgress(spinner, `Current branch is ${currentBranch}, but it should be main.`);
             console.log(`Repo: ${repoPath}`);
-
             process.exit(1);
         }
         if (status.files.length > 0) {
-            console.error("❌ Uncommitted changes detected:");
+            failProgress(spinner, "❌ Uncommitted changes detected");
             console.log(`Repo: ${repoPath}`);
             process.exit(1);
         }
 
-        console.log(`${repositoryPackageJson.name}: pulling ...`);
+        spinner.text = `${repositoryPackageJson.name}: pulling ...`;
 
         await git.pull();
-        console.log(`${repositoryPackageJson.name}: Checking status ...`);
+        spinner.text = `${repositoryPackageJson.name}: Checking status ...`;
         status = await git.status();
 
         // Check for new uncommitted changes after pulling
         if (status.files.length > 0) {
-            console.error("❌ Uncommitted changes detected:");
+            failProgress(spinner, "❌ Uncommitted changes detected after pull");
             console.log(`Repo: ${repoPath}`);
             process.exit(1);
         } else {
-            console.log(`${repositoryPackageJson.name}: pushing ...`);
+            spinner.text = `${repositoryPackageJson.name}: pushing ...`;
 
             await git.push();
         }
 
-        console.log(`${repositoryPackageJson.name}: fetching ...`);
+        spinner.text = `${repositoryPackageJson.name}: fetching branches...`;
 
         const branches = await git.branch(["-r"]);
 
         // Check if stable branch exists in remote
         if (!branches.all.includes("origin/stable")) {
-            console.log("stable branch does not exist");
+            failProgress(spinner, "stable branch does not exist");
             console.log(`Repo: ${repoPath}`);
             process.exit(1);
         }
 
-        console.log(`Checking Repo: ${repositoryPackageJson.name} Finished`);
+        successProgress(spinner, `Checking Repo: ${repositoryPackageJson.name} Finished`);
     } catch (error: any) {
         console.error("Error while committing changes:", error.message);
 
@@ -163,7 +164,16 @@ const runDeployCommand = async (repoPath: string) => {
             console.log({ repoPath });
             return;
         }
-        execSync("npm run deploy", { cwd: repoPath, stdio: "inherit" });
+        
+        const spinner = startProgress(`Deploying: ${repositoryPackageJson.name}`);
+        
+        try {
+            execSync("npm run deploy", { cwd: repoPath, stdio: "pipe" });
+            successProgress(spinner, `Deployment successful: ${repositoryPackageJson.name}`);
+        } catch (error) {
+            failProgress(spinner, `Deployment failed: ${repositoryPackageJson.name}`);
+            throw error;
+        }
     } catch (error) {
         console.error(`Deployment failed for ${repoPath}`, error);
     }
@@ -173,14 +183,45 @@ export const deployAllRepos = async () => {
     console.log("------------deployAll Started-------------");
     try {
         const allPaths = getAllPaths();
-        console.log(allPaths);
-
-        for (const repoPath of allPaths) {
-            await checkRepo(repoPath);
+        
+        if (allPaths.length === 0) {
+            console.log("No valid repositories found. Exiting.");
+            return;
         }
+        
+        const progress = createMultiProgress();
+        progress.start("Starting repository checks");
+        progress.setTotal(allPaths.length);
+        
+        // First check all repos
         for (const repoPath of allPaths) {
-            await runDeployCommand(repoPath);
+            try {
+                await checkRepo(repoPath);
+                progress.incrementCompleted();
+            } catch (error) {
+                progress.incrementFailed();
+                console.error(`Error checking repository: ${repoPath}`, error);
+            }
         }
+        
+        progress.complete("Repository checks completed");
+        
+        // Then deploy all repos
+        const deployProgress = createMultiProgress();
+        deployProgress.start("Starting deployments");
+        deployProgress.setTotal(allPaths.length);
+        
+        for (const repoPath of allPaths) {
+            try {
+                await runDeployCommand(repoPath);
+                deployProgress.incrementCompleted();
+            } catch (error) {
+                deployProgress.incrementFailed();
+                console.error(`Error deploying repository: ${repoPath}`, error);
+            }
+        }
+        
+        deployProgress.complete("Deployments completed");
     } catch (error) {
         console.log(error);
     }

@@ -7,6 +7,7 @@ import { simpleGit, SimpleGit, SimpleGitOptions } from "simple-git";
 import { isDeveloperAdarsh } from "../configs/environment.js";
 import { TPbkProject } from "../types.js";
 import { loadConfig } from "../utils/loadConfig.js";
+import { createMultiProgress, failProgress, startProgress, successProgress, updateProgress } from "../utils/progress.js";
 
 const getAllPaths = () => {
     try {
@@ -63,7 +64,8 @@ const runAcpCommands = async (repoPath: string, message: string) => {
             console.log({ repositoryPackageJson });
             return;
         }
-        console.log(`Running ACP In ${repositoryPackageJson.name} Started`);
+        
+        const spinner = startProgress(`Running ACP in ${repositoryPackageJson.name}`);
 
         const options: Partial<SimpleGitOptions> = {
             baseDir: path.resolve(repoPath),
@@ -71,10 +73,10 @@ const runAcpCommands = async (repoPath: string, message: string) => {
             maxConcurrentProcesses: 6,
         };
         const git: SimpleGit = simpleGit(options);
-        console.log(`${repositoryPackageJson.name}: fetching ...`);
+        updateProgress(spinner, `${repositoryPackageJson.name}: fetching ...`);
 
         await git.fetch();
-        console.log(`${repositoryPackageJson.name}: Checking status ...`);
+        updateProgress(spinner, `${repositoryPackageJson.name}: Checking status ...`);
 
         let status = await git.status();
 
@@ -84,33 +86,37 @@ const runAcpCommands = async (repoPath: string, message: string) => {
         // console.log(currentBranch);
 
         if (currentBranch !== "main") {
-            console.error(`Current branch is ${currentBranch}, but it should be main.`);
+            failProgress(spinner, `Current branch is ${currentBranch}, but it should be main.`);
             console.log(`Repo: ${repoPath}`);
-
             process.exit(1);
         }
+        
         if (status.files.length > 0) {
+            updateProgress(spinner, `${repositoryPackageJson.name}: Adding files ...`);
             await git.add(".");
+            updateProgress(spinner, `${repositoryPackageJson.name}: Committing changes ...`);
             await git.commit(message);
         }
 
-        console.log(`${repositoryPackageJson.name}: pulling ...`);
+        updateProgress(spinner, `${repositoryPackageJson.name}: pulling ...`);
 
         await git.pull();
-        console.log(`${repositoryPackageJson.name}: Checking status ...`);
+        updateProgress(spinner, `${repositoryPackageJson.name}: Checking status ...`);
 
         status = await git.status();
 
         // Check for new uncommitted changes after pulling
         if (status.files.length > 0) {
+            updateProgress(spinner, `${repositoryPackageJson.name}: Adding files after pull ...`);
             await git.add(".");
+            updateProgress(spinner, `${repositoryPackageJson.name}: Committing changes after pull ...`);
             await git.commit(message);
         }
-        console.log(`${repositoryPackageJson.name}: pushing ...`);
-
+        
+        updateProgress(spinner, `${repositoryPackageJson.name}: pushing ...`);
         await git.push();
 
-        console.log(`Running ACP In ${repositoryPackageJson.name} Finished`);
+        successProgress(spinner, `Running ACP in ${repositoryPackageJson.name} Finished`);
     } catch (error: any) {
         console.error("Error while committing changes:", error.message);
 
@@ -122,8 +128,6 @@ const runAcpCommands = async (repoPath: string, message: string) => {
 };
 
 export const gitAcpAllRepos = async () => {
-  
-
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -146,11 +150,27 @@ export const gitAcpAllRepos = async () => {
         console.log("------------gitAcpAllRepos Started-------------");
 
         const allPaths = getAllPaths();
-        console.log(allPaths);
-
-        for (const repoPath of allPaths) {
-            await runAcpCommands(repoPath, `${new Date().toLocaleString()} : ${commitMessage}`);
+        
+        if (allPaths.length === 0) {
+            console.log("No valid repositories found. Exiting.");
+            return;
         }
+        
+        const progress = createMultiProgress();
+        progress.start("Processing repositories");
+        progress.setTotal(allPaths.length);
+        
+        for (const repoPath of allPaths) {
+            try {
+                await runAcpCommands(repoPath, `${new Date().toLocaleString()} : ${commitMessage}`);
+                progress.incrementCompleted();
+            } catch (error) {
+                progress.incrementFailed();
+                console.error(`Error processing repository: ${repoPath}`, error);
+            }
+        }
+        
+        progress.complete();
         console.log("------------gitAcpAllRepos Ended-------------");
     } catch (error) {
         console.log(error);
