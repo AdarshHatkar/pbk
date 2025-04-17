@@ -6,6 +6,7 @@ import { gitAcpAllRepos } from '../cli/gitAcpAllRepos.js';
 import { gitPushAllRepos } from '../cli/gitPushAllRepos.js';
 import { transfer2Shared } from '../cli/transfer2Shared.js';
 import { initConfig } from '../cli/initConfig.js';
+import { fixConfigFile } from '../cli/fixConfigFile.js';
 import '../utils/progress.js';
 
 import packageJson from '../../package.json' with { type: "json" };
@@ -48,6 +49,14 @@ program
   .description('Push b2fPortal changes in all repositories')
   .action(async () => {
     await gitPushAllRepos();
+  });
+
+program
+  .command('fix-config-file')
+  .description('Fix JSON files by adding double quotes to keys and removing trailing commas')
+  .option('-p, --path <path>', 'Path to the JSON file to fix (defaults to pbk.config.json)')
+  .action(async (options) => {
+    await fixConfigFile(options.path);
   });
 
 program
