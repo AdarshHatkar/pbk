@@ -105,7 +105,7 @@ This package includes JSON schema validation for your configuration file. To ena
   "json.schemas": [
     {
       "fileMatch": ["pbk.config.json"],
-      "url": "./node_modules/pbk/pbk.schema.json"
+      "url": "./node_modules/@primexop/pbk/pbk.schema.json"
     }
   ],
   "files.associations": {
