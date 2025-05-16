@@ -10,6 +10,23 @@ type TSyncFilesAndFoldersV2Params = {
     deleteExtraFilesInTarget?: boolean;
 };
 
+// Define file details types at module level for consistency
+type TFileDetails = {
+    [fileName: string]: {
+        sourceFilePath: string;
+        mtime: number;
+        localDate: string;
+        hash?: string; // Hash property to store file content hash
+    };
+};
+
+type TFileDetailsEntry = {
+    sourceFilePath: string;
+    mtime: number;
+    fileName: string;
+    hash: string; // Include hash in the entry type
+};
+
 // Utility function to calculate file hash
 async function getFileHash(filePath: string): Promise<string> {
     try {
@@ -37,19 +54,8 @@ export async function syncFilesAndFolders({
             console.error(`Error creating target directory ${targetDirPath}:`, error);
             throw new Error(`Failed to create target directory: ${error.message}`);
         }
-    }
-
-    // Load or initialize JSON file to store file details
+    }    // Load or initialize JSON file to store file details
     const jsonFilePath = path.join(targetDirPath, "file_details.json");
-
-    type TFileDetails = {
-        [fileName: string]: {
-            sourceFilePath: string;
-            mtime: number;
-            localDate: string;
-            hash?: string; // Added hash property to store file content hash
-        };
-    };
 
     let fileDetails: TFileDetails = {};
     let initialFileDetails: TFileDetails = {};
@@ -70,17 +76,9 @@ export async function syncFilesAndFolders({
             initialFileDetails = {};
             // Create a valid JSON file
             await fsPromises.writeFile(jsonFilePath, "{}");
-        }
-    } else {
+        }    } else {
         await fsPromises.writeFile(jsonFilePath, "{}");
     }
-
-    type TFileDetailsEntry = {
-        sourceFilePath: string;
-        mtime: number;
-        fileName: string;
-        hash: string; // Include hash in the entry type
-    };
       async function updateFileDetails({ fileName, sourceFilePath, mtime, hash }: TFileDetailsEntry) {
         // const stats = await fsPromises.stat(sourceFilePath);
         fileDetails[fileName] = {
