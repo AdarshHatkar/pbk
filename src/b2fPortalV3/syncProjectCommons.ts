@@ -12,10 +12,15 @@ type TSyncFilesAndFoldersV2Params = {
 
 // Utility function to calculate file hash
 async function getFileHash(filePath: string): Promise<string> {
-    const fileBuffer = await fsPromises.readFile(filePath);
-    const hashSum = crypto.createHash('sha1');
-    hashSum.update(fileBuffer);
-    return hashSum.digest('hex');
+    try {
+        const fileBuffer = await fsPromises.readFile(filePath);
+        const hashSum = crypto.createHash('sha1');
+        hashSum.update(fileBuffer);
+        return hashSum.digest('hex');
+    } catch (error: any) {
+        console.error(`Error calculating hash for file ${filePath}:`, error);
+        throw new Error(`Failed to calculate file hash: ${error.message}`);
+    }
 }
 
 export async function syncFilesAndFolders({
@@ -26,7 +31,12 @@ export async function syncFilesAndFolders({
 }: TSyncFilesAndFoldersV2Params) {
     // Create target directory if it doesn't exist
     if (!fs.existsSync(targetDirPath)) {
-        await fsPromises.mkdir(targetDirPath, { recursive: true });
+        try {
+            await fsPromises.mkdir(targetDirPath, { recursive: true });
+        } catch (error: any) {
+            console.error(`Error creating target directory ${targetDirPath}:`, error);
+            throw new Error(`Failed to create target directory: ${error.message}`);
+        }
     }
 
     // Load or initialize JSON file to store file details
@@ -71,8 +81,7 @@ export async function syncFilesAndFolders({
         fileName: string;
         hash: string; // Include hash in the entry type
     };
-    
-    async function updateFileDetails({ fileName, sourceFilePath, mtime, hash }: TFileDetailsEntry) {
+      async function updateFileDetails({ fileName, sourceFilePath, mtime, hash }: TFileDetailsEntry) {
         // const stats = await fsPromises.stat(sourceFilePath);
         fileDetails[fileName] = {
             sourceFilePath,
@@ -84,21 +93,34 @@ export async function syncFilesAndFolders({
         if (
             JSON.stringify(fileDetails) !== JSON.stringify(initialFileDetails)
         ) {
-            await fsPromises.writeFile(
-                jsonFilePath,
-                JSON.stringify(fileDetails, null, 2)
-            );
+            try {
+                await fsPromises.writeFile(
+                    jsonFilePath,
+                    JSON.stringify(fileDetails, null, 2)
+                );
+            } catch (error: any) {
+                console.error(`Error writing to file ${jsonFilePath}:`, error);
+                // Continue execution since this is not critical
+            }
         }
+    }// Traverse through source directory
+    let filesInSource;
+    try {
+        filesInSource = await fsPromises.readdir(sourceDirPath);
+    } catch (error: any) {
+        console.error(`Error reading directory ${sourceDirPath}:`, error);
+        throw new Error(`Failed to read source directory: ${error.message}`);
     }
-
-    // Traverse through source directory
-    const filesInSource = await fsPromises.readdir(sourceDirPath);
     
     for (const fileName of filesInSource) {
         const sourcePath = path.join(sourceDirPath, fileName);
-        const targetPath = path.join(targetDirPath, fileName);
-
-        const stats = await fsPromises.lstat(sourcePath);
+        const targetPath = path.join(targetDirPath, fileName);        let stats;
+        try {
+            stats = await fsPromises.lstat(sourcePath);
+        } catch (error: any) {
+            console.error(`Error getting stats for ${sourcePath}:`, error);
+            continue; // Skip this file/directory and move to next one
+        }
         if (stats.isDirectory()) {
             // Recursively sync directories
             await syncFilesAndFolders({
@@ -112,11 +134,19 @@ export async function syncFilesAndFolders({
             if (
                 fileNamePatterns.length === 0 ||
                 fileNamePatterns.some((pattern) => fileName.includes(pattern))
-            ) {
-                // Get source file hash and modified time
-                const sourceStats = await fsPromises.stat(sourcePath);
-                const sourceFileModifiedTime = sourceStats.mtime.getTime();
-                const sourceFileHash = await getFileHash(sourcePath);
+            ) {                // Get source file hash and modified time
+                let sourceStats;
+                let sourceFileModifiedTime;
+                let sourceFileHash;
+                
+                try {
+                    sourceStats = await fsPromises.stat(sourcePath);
+                    sourceFileModifiedTime = sourceStats.mtime.getTime();
+                    sourceFileHash = await getFileHash(sourcePath);
+                } catch (error: any) {
+                    console.error(`Error getting file information for ${sourcePath}:`, error);
+                    continue; // Skip this file and move to the next one
+                }
 
                 // Check if file exists in target and if it's modified or new
                 const targetExists = fs.existsSync(targetPath);
@@ -126,12 +156,16 @@ export async function syncFilesAndFolders({
                     !fileDetails[fileName] ||
                     !fileDetails[fileName]?.hash || // If hash doesn't exist (backwards compatibility)
                     fileDetails[fileName]?.hash !== sourceFileHash // Primary check: compare file hashes
-                ) {
-                    // Copy or replace the file in the target directory
-                    await fsPromises.copyFile(sourcePath, targetPath);
-                    console.log(
-                        `Copied file: ${path.relative(sourceDirPath, sourcePath)}`
-                    );
+                ) {                    // Copy or replace the file in the target directory
+                    try {
+                        await fsPromises.copyFile(sourcePath, targetPath);
+                        console.log(
+                            `Copied file: ${path.relative(sourceDirPath, sourcePath)}`
+                        );
+                    } catch (error: any) {
+                        console.error(`Error copying file from ${sourcePath} to ${targetPath}:`, error);
+                        // Continue with other files even if one fails
+                    }
                     
                     // Update file details with hash included
                     await updateFileDetails({
@@ -153,25 +187,32 @@ export async function syncFilesAndFolders({
 
             // Check if the source file exists
             const sourceExists = fs.existsSync(sourceFilePath);
-            if (!sourceExists) {
-                // Delete the file from the target directory
+            if (!sourceExists) {                // Delete the file from the target directory
                 if (fs.existsSync(targetFilePath)) {
-                    await fsPromises.unlink(targetFilePath);
-                    // console.log(`Deleted target file: ${targetFilePath}`);
+                    try {
+                        await fsPromises.unlink(targetFilePath);
+                        // console.log(`Deleted target file: ${targetFilePath}`);
+                    } catch (error: any) {
+                        console.error(`Error deleting file ${targetFilePath}:`, error);
+                        // Continue with other files even if deletion fails
+                    }
                 }
 
                 // Delete the file entry from fileDetails
                 delete fileDetails[fileName];
             }
-        }
-
-        if (
+        }        if (
             JSON.stringify(fileDetails) !== JSON.stringify(initialFileDetails)
         ) {
-            await fsPromises.writeFile(
-                jsonFilePath,
-                JSON.stringify(fileDetails, null, 2)
-            );
+            try {
+                await fsPromises.writeFile(
+                    jsonFilePath,
+                    JSON.stringify(fileDetails, null, 2)
+                );
+            } catch (error: any) {
+                console.error(`Error writing to file ${jsonFilePath} in cleanup:`, error);
+                // Continue execution since this is not critical
+            }
         }
     }
 
