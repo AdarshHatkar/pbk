@@ -4,15 +4,15 @@ import { TPbkProject } from "../types.js";
 
 
 // Helper function to find all .ts files in a directory (including subdirectories)
-function findTsFilesInDir(directoryPath: string): string[] {
+async function findTsFilesInDir(directoryPath: string): Promise<string[]> {
     const files: string[] = [];
-    const direntArr = fs.readdirSync(directoryPath, { withFileTypes: true });
+    const direntArr = await fs.promises.readdir(directoryPath, { withFileTypes: true });
 
     for (const dirent of direntArr) {
         const fullPath = path.join(directoryPath, dirent.name);
         if (dirent.isDirectory()) {
             // Recursively search in subdirectories
-            files.push(...findTsFilesInDir(fullPath));
+            files.push(...await findTsFilesInDir(fullPath));
         } else if (dirent.isFile() && dirent.name.endsWith(".ts")) {
             // Add .ts files to the result
             files.push(fullPath);
@@ -23,9 +23,9 @@ function findTsFilesInDir(directoryPath: string): string[] {
 }
 
 // Main function to validate project imports
-export function checkCrossProjectImportsFun(b2fPortalProjects:TPbkProject[]) {
+export async function checkCrossProjectImportsFun(b2fPortalProjects:TPbkProject[]): Promise<void> {
     console.log("------------checkCrossProjectImports Started-------------");
-    let  clientRootDirPath = process.cwd();
+    let clientRootDirPath = process.cwd();
     // Track number of cross-project import violations
     let crossProjectImportCount = 0;
 //    console.log({clientRootDirPath});
@@ -36,19 +36,19 @@ export function checkCrossProjectImportsFun(b2fPortalProjects:TPbkProject[]) {
     const projectNames = b2fPortalProjects.map((project) => project.projectName);
 
     // Process each project
-    b2fPortalProjects.forEach((project) => {
+    for (const project of b2fPortalProjects) {
         const projectDir = path.resolve(srcDirPath, project.projectBaseDirPath);
         // console.log("Project directory:", projectDir);
 
         // Find all .ts files in the project directory (including subdirectories)
-        const tsFiles = findTsFilesInDir(projectDir);
+        const tsFiles = await findTsFilesInDir(projectDir);
         // console.log("Found .ts files:", tsFiles);
 
         // Process each TypeScript file
-        tsFiles.forEach((filePath) => {
+        for (const filePath of tsFiles) {
             // // console.log("Found file:", filePath); // Log the file being processed
 
-            const content = fs.readFileSync(filePath, "utf-8");
+            const content = await fs.promises.readFile(filePath, "utf-8");
             // // console.log("File content:", content); // Log the content of the file
 
             const importRegex = /import\s+.*?from\s+['"]([^'"]+)['"]/g;
@@ -61,7 +61,9 @@ export function checkCrossProjectImportsFun(b2fPortalProjects:TPbkProject[]) {
                 // Skip relative imports and external modules
                 if (importPath.startsWith(".") || !importPath.includes("/")) {
                     continue;
-                }                // Check if the import path includes another project's name
+                }                
+                
+                // Check if the import path includes another project's name
                 const isCrossProjectImport = projectNames.some(
                     (otherProjectName) =>
                         otherProjectName !== project.projectName &&
@@ -77,7 +79,8 @@ export function checkCrossProjectImportsFun(b2fPortalProjects:TPbkProject[]) {
                     );
                 }
             }
-        });    });
+        }
+    }
 
     console.log(`------------checkCrossProjectImports Finished-------------`);
     if (crossProjectImportCount > 0) {

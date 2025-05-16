@@ -23,9 +23,9 @@ export function greet(name: string): string {
  * @returns {TPbkConfig} The loaded and validated configuration
  * @throws {Error} If the configuration is invalid or file doesn't exist
  */
-export function pbkInit(options: {
+export async function pbkInit(options: {
   configPath?: string;
-} = {}): TPbkConfig {
+} = {}): Promise<TPbkConfig> {
   // Set default options
   const { configPath = path.join(process.cwd(), 'pbk.config.json') } = options;
 
@@ -39,11 +39,11 @@ export function pbkInit(options: {
 
     // Initialize features based on config flags
     if (config.b2fPortal) {
-      b2fPortalInit(config.projects);
+      await b2fPortalInit(config.projects);
     }
 
     if (config.checkCrossProjectImports) {
-      checkCrossProjectImportsFun(config.projects);
+      await checkCrossProjectImportsFun(config.projects);
     }
 
     return config;
