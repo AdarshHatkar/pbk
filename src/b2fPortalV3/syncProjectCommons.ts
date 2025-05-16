@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import path from "path";
 
 type TSyncFilesAndFoldersV2Params = {
@@ -8,14 +9,15 @@ type TSyncFilesAndFoldersV2Params = {
     deleteExtraFilesInTarget?: boolean;
 };
 
-export function syncFilesAndFolders({
+export async function syncFilesAndFolders({
     sourceDirPath,
     targetDirPath,
     fileNamePatterns = [],
     deleteExtraFilesInTarget = true,
 }: TSyncFilesAndFoldersV2Params) {
+    // Create target directory if it doesn't exist
     if (!fs.existsSync(targetDirPath)) {
-        fs.mkdirSync(targetDirPath, { recursive: true });
+        await fsPromises.mkdir(targetDirPath, { recursive: true });
     }
 
     // Load or initialize JSON file to store file details
@@ -31,11 +33,13 @@ export function syncFilesAndFolders({
 
     let fileDetails: TFileDetails = {};
     let initialFileDetails: TFileDetails = {};
+    
     if (fs.existsSync(jsonFilePath)) {
-        fileDetails = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
+        const fileContent = await fsPromises.readFile(jsonFilePath, "utf8");
+        fileDetails = JSON.parse(fileContent);
         initialFileDetails = { ...fileDetails };
     } else {
-        fs.writeFileSync(jsonFilePath, "{}");
+        await fsPromises.writeFile(jsonFilePath, "{}");
     }
 
     type TFileDetailsEntry = {
@@ -43,8 +47,9 @@ export function syncFilesAndFolders({
         mtime: number;
         fileName: string;
     };
-    function updateFileDetails({ fileName, sourceFilePath, mtime }:TFileDetailsEntry) {
-        const stats = fs.statSync(sourceFilePath);
+    
+    async function updateFileDetails({ fileName, sourceFilePath, mtime }: TFileDetailsEntry) {
+        // const stats = await fsPromises.stat(sourceFilePath);
         fileDetails[fileName] = {
             sourceFilePath,
             mtime,
@@ -54,7 +59,7 @@ export function syncFilesAndFolders({
         if (
             JSON.stringify(fileDetails) !== JSON.stringify(initialFileDetails)
         ) {
-            fs.writeFileSync(
+            await fsPromises.writeFile(
                 jsonFilePath,
                 JSON.stringify(fileDetails, null, 2)
             );
@@ -62,58 +67,47 @@ export function syncFilesAndFolders({
     }
 
     // Traverse through source directory
-    const filesInSource = fs.readdirSync(sourceDirPath);
-    filesInSource.forEach((fileName) => {
+    const filesInSource = await fsPromises.readdir(sourceDirPath);
+    
+    for (const fileName of filesInSource) {
         const sourcePath = path.join(sourceDirPath, fileName);
         const targetPath = path.join(targetDirPath, fileName);
 
-        if (fs.lstatSync(sourcePath).isDirectory()) {
+        const stats = await fsPromises.lstat(sourcePath);
+        if (stats.isDirectory()) {
             // Recursively sync directories
-            syncFilesAndFolders({
+            await syncFilesAndFolders({
                 sourceDirPath: sourcePath,
                 targetDirPath: targetPath,
                 fileNamePatterns,
                 deleteExtraFilesInTarget,
             });
         } else {
-            // Function to check if a file matches any pattern in the array
-
-            // Loop through files
+            // Check if file matches patterns
             if (
                 fileNamePatterns.length === 0 ||
                 fileNamePatterns.some((pattern) => fileName.includes(pattern))
             ) {
-                // if (fileName === 'gamesZod.ts') {
-                //     console.log({
-                //         existsSync: fs.existsSync(targetPath),
-                //         stats: fs.statSync(sourcePath),
-                //         mtime: fs.statSync(sourcePath).mtime,
-                //         mtimeMs: fs.statSync(sourcePath).mtime.getTime(),
-                //         name: path.basename(sourcePath),
-                //         fileName,
-                //         localDate: new Date(fs.statSync(sourcePath).mtime.getTime()).toLocaleString(),
-
-                //     });
-                // }
-
-                const sourceFileModifiedTime = fs
-                    .statSync(sourcePath)
-                    .mtime.getTime();
+                // Get source file modified time
+                const sourceStats = await fsPromises.stat(sourcePath);
+                const sourceFileModifiedTime = sourceStats.mtime.getTime();
 
                 // Check if file exists in target and if it's modified or new
+                const targetExists = fs.existsSync(targetPath);
+                
                 if (
-                    !fs.existsSync(targetPath) ||
+                    !targetExists ||
                     !fileDetails[fileName] ||
                     fileDetails[fileName]?.mtime !== sourceFileModifiedTime
                 ) {
                     // Copy or replace the file in the target directory
-
-                    fs.copyFileSync(sourcePath, targetPath);
+                    await fsPromises.copyFile(sourcePath, targetPath);
                     console.log(
                         `Copied file: ${path.relative(sourceDirPath, sourcePath)}`
                     );
+                    
                     // Update file details
-                    updateFileDetails({
+                    await updateFileDetails({
                         fileName,
                         sourceFilePath: sourcePath,
                         mtime: sourceFileModifiedTime,
@@ -121,21 +115,20 @@ export function syncFilesAndFolders({
                 }
             }
         }
-    });
+    }
 
-    function cleanUpFilesAndDirs(fileDetails: TFileDetails, targetDir: string) {
+    async function cleanUpFilesAndDirs(fileDetails: TFileDetails, targetDir: string) {
         // Iterate over fileDetails to check if source paths exist
         for (const [fileName, detail] of Object.entries(fileDetails)) {
-            const sourceFilePath = path.join(detail.sourceFilePath);
+            const sourceFilePath = detail.sourceFilePath
             const targetFilePath = path.join(targetDir, fileName);
 
             // Check if the source file exists
-            if (!fs.existsSync(sourceFilePath)) {
-                // console.log(`Source file not found: ${fullPath}, removing from target and fileDetails...`);
-
+            const sourceExists = fs.existsSync(sourceFilePath);
+            if (!sourceExists) {
                 // Delete the file from the target directory
                 if (fs.existsSync(targetFilePath)) {
-                    fs.unlinkSync(targetFilePath);
+                    await fsPromises.unlink(targetFilePath);
                     // console.log(`Deleted target file: ${targetFilePath}`);
                 }
 
@@ -147,7 +140,7 @@ export function syncFilesAndFolders({
         if (
             JSON.stringify(fileDetails) !== JSON.stringify(initialFileDetails)
         ) {
-            fs.writeFileSync(
+            await fsPromises.writeFile(
                 jsonFilePath,
                 JSON.stringify(fileDetails, null, 2)
             );
@@ -156,6 +149,6 @@ export function syncFilesAndFolders({
 
     // Check for files in target directory that are not in source directory
     if (deleteExtraFilesInTarget) {
-        cleanUpFilesAndDirs(fileDetails, targetDirPath);
+        await cleanUpFilesAndDirs(fileDetails, targetDirPath);
     }
 }
