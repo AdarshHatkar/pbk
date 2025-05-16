@@ -3,14 +3,14 @@ import { join } from "path";
 
 
 import { createZodFiles } from "./moduleZodCreator.js";
-import { syncFilesAndFolders } from "./syncProjectCommons.js";
+import {  syncFilesAndFolders } from "./syncProjectCommons.js";
 import { createModuleFiles } from "./moduleFileCreator.js";
 import { checkModuleRecords } from "./checkModuleRecords.js";
 import { checkModuleZodRecords } from "./checkModuleZodRecords.js";
 import { getTsFiles, updateImports } from "./stripExtensions.js";
 import { TPbkProject } from "../types.js";
 
-export const b2fPortalInit = (b2fPortalProjects:TPbkProject[]) => {
+export const b2fPortalInit = async (b2fPortalProjects:TPbkProject[]) => {
     console.log("------------pbk Started-------------");
 
    let  clientRootDirPath = process.cwd()
@@ -191,7 +191,7 @@ export const b2fPortalInit = (b2fPortalProjects:TPbkProject[]) => {
             // sync serverB2f
             const repositoryServerB2fPath = join(repositoryBackedPortalPath, "serverB2f");
 
-            syncFilesAndFolders({
+            await syncFilesAndFolders({
                 sourceDirPath: serverB2fPath,
                 targetDirPath: repositoryServerB2fPath,
             });
@@ -199,7 +199,7 @@ export const b2fPortalInit = (b2fPortalProjects:TPbkProject[]) => {
             // sync projectB2f
             const repositoryProjectB2fPath = join(repositoryBackedPortalPath, "projectB2f");
 
-            syncFilesAndFolders({
+            await syncFilesAndFolders({
                 sourceDirPath: projectB2fPath,
                 targetDirPath: repositoryProjectB2fPath,
             });
@@ -211,7 +211,7 @@ export const b2fPortalInit = (b2fPortalProjects:TPbkProject[]) => {
                 "sectionB2f"
             );
 
-            syncFilesAndFolders({
+            await syncFilesAndFolders({
                 sourceDirPath: sectionB2fPath,
                 targetDirPath: repositorySectionB2fPath,
             });
@@ -223,19 +223,19 @@ export const b2fPortalInit = (b2fPortalProjects:TPbkProject[]) => {
                 "trpcApi"
             );
 
-            syncFilesAndFolders({
+            await syncFilesAndFolders({
                 sourceDirPath: sectionSrcTrpcApiPath,
                 targetDirPath: repositoryTrpcApiPath,
                 fileNamePatterns: ["Zod", "zodSchemas"],
             });
 
-            syncFilesAndFolders({
+            await syncFilesAndFolders({
                 sourceDirPath: sectionDistTrpcApiPath,
                 targetDirPath: repositoryDistTrpcApiPath,
                 fileNamePatterns: ["trpcRouter.d.ts"],
             });
 
-            syncFilesAndFolders({
+            await syncFilesAndFolders({
                 sourceDirPath: projectPrismaClientPath,
                 targetDirPath: repositoryPrismaClientPath,
                 fileNamePatterns: [

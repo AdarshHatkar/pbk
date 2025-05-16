@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "path";
+import crypto from "node:crypto"; // Added crypto for file hashing
 
 type TSyncFilesAndFoldersV2Params = {
     sourceDirPath: string;
@@ -8,6 +9,14 @@ type TSyncFilesAndFoldersV2Params = {
     fileNamePatterns?: string[];
     deleteExtraFilesInTarget?: boolean;
 };
+
+// Utility function to calculate file hash
+async function getFileHash(filePath: string): Promise<string> {
+    const fileBuffer = await fsPromises.readFile(filePath);
+    const hashSum = crypto.createHash('sha1');
+    hashSum.update(fileBuffer);
+    return hashSum.digest('hex');
+}
 
 export async function syncFilesAndFolders({
     sourceDirPath,
@@ -28,16 +37,30 @@ export async function syncFilesAndFolders({
             sourceFilePath: string;
             mtime: number;
             localDate: string;
+            hash?: string; // Added hash property to store file content hash
         };
     };
 
     let fileDetails: TFileDetails = {};
     let initialFileDetails: TFileDetails = {};
-    
-    if (fs.existsSync(jsonFilePath)) {
-        const fileContent = await fsPromises.readFile(jsonFilePath, "utf8");
-        fileDetails = JSON.parse(fileContent);
-        initialFileDetails = { ...fileDetails };
+      if (fs.existsSync(jsonFilePath)) {
+        try {
+            const fileContent = await fsPromises.readFile(jsonFilePath, "utf8");
+            // Handle empty file case
+            if (fileContent.trim() === '') {
+                fileDetails = {};
+            } else {
+                fileDetails = JSON.parse(fileContent);
+            }
+            initialFileDetails = { ...fileDetails };
+        } catch (error) {
+            console.error(`Error reading or parsing ${jsonFilePath}:`, error);
+            // Reset file details if there's an error
+            fileDetails = {};
+            initialFileDetails = {};
+            // Create a valid JSON file
+            await fsPromises.writeFile(jsonFilePath, "{}");
+        }
     } else {
         await fsPromises.writeFile(jsonFilePath, "{}");
     }
@@ -46,14 +69,16 @@ export async function syncFilesAndFolders({
         sourceFilePath: string;
         mtime: number;
         fileName: string;
+        hash: string; // Include hash in the entry type
     };
     
-    async function updateFileDetails({ fileName, sourceFilePath, mtime }: TFileDetailsEntry) {
+    async function updateFileDetails({ fileName, sourceFilePath, mtime, hash }: TFileDetailsEntry) {
         // const stats = await fsPromises.stat(sourceFilePath);
         fileDetails[fileName] = {
             sourceFilePath,
             mtime,
             localDate: new Date(mtime).toLocaleString(),
+            hash, // Store the hash in file details
         };
 
         if (
@@ -88,9 +113,10 @@ export async function syncFilesAndFolders({
                 fileNamePatterns.length === 0 ||
                 fileNamePatterns.some((pattern) => fileName.includes(pattern))
             ) {
-                // Get source file modified time
+                // Get source file hash and modified time
                 const sourceStats = await fsPromises.stat(sourcePath);
                 const sourceFileModifiedTime = sourceStats.mtime.getTime();
+                const sourceFileHash = await getFileHash(sourcePath);
 
                 // Check if file exists in target and if it's modified or new
                 const targetExists = fs.existsSync(targetPath);
@@ -98,7 +124,8 @@ export async function syncFilesAndFolders({
                 if (
                     !targetExists ||
                     !fileDetails[fileName] ||
-                    fileDetails[fileName]?.mtime !== sourceFileModifiedTime
+                    !fileDetails[fileName]?.hash || // If hash doesn't exist (backwards compatibility)
+                    fileDetails[fileName]?.hash !== sourceFileHash // Primary check: compare file hashes
                 ) {
                     // Copy or replace the file in the target directory
                     await fsPromises.copyFile(sourcePath, targetPath);
@@ -106,11 +133,12 @@ export async function syncFilesAndFolders({
                         `Copied file: ${path.relative(sourceDirPath, sourcePath)}`
                     );
                     
-                    // Update file details
+                    // Update file details with hash included
                     await updateFileDetails({
                         fileName,
                         sourceFilePath: sourcePath,
                         mtime: sourceFileModifiedTime,
+                        hash: sourceFileHash,
                     });
                 }
             }
