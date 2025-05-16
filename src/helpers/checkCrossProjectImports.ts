@@ -25,10 +25,12 @@ function findTsFilesInDir(directoryPath: string): string[] {
 // Main function to validate project imports
 export function checkCrossProjectImportsFun(b2fPortalProjects:TPbkProject[]) {
     console.log("------------checkCrossProjectImports Started-------------");
- let  clientRootDirPath = process.cwd()
+    let  clientRootDirPath = process.cwd();
+    // Track number of cross-project import violations
+    let crossProjectImportCount = 0;
 //    console.log({clientRootDirPath});
    
-     const srcDirPath = path.join(clientRootDirPath, 'src');
+    const srcDirPath = path.join(clientRootDirPath, 'src');
     const distDirPath = path.join(clientRootDirPath, 'dist');
     // Collect all project names
     const projectNames = b2fPortalProjects.map((project) => project.projectName);
@@ -59,9 +61,7 @@ export function checkCrossProjectImportsFun(b2fPortalProjects:TPbkProject[]) {
                 // Skip relative imports and external modules
                 if (importPath.startsWith(".") || !importPath.includes("/")) {
                     continue;
-                }
-
-                // Check if the import path includes another project's name
+                }                // Check if the import path includes another project's name
                 const isCrossProjectImport = projectNames.some(
                     (otherProjectName) =>
                         otherProjectName !== project.projectName &&
@@ -69,17 +69,20 @@ export function checkCrossProjectImportsFun(b2fPortalProjects:TPbkProject[]) {
                 );
 
                 if (isCrossProjectImport) {
-                    if (isCrossProjectImport) {
-                        console.error(
-                            `\n[ERROR] Invalid import detected in project "${project.projectName}":\n` +
-                                `  - File: "${filePath}"\n` +
-                                `  - Import Path: "${importPath}"\n`
-                        );
-                    }
+                    crossProjectImportCount++;
+                    console.error(
+                        `\n[ERROR] Invalid import detected in project "${project.projectName}":\n` +
+                            `  - File: "${filePath}"\n` +
+                            `  - Import Path: "${importPath}"\n`
+                    );
                 }
             }
-        });
-    });
+        });    });
 
-    console.log("------------checkCrossProjectImports Finished-------------");
+    console.log(`------------checkCrossProjectImports Finished-------------`);
+    if (crossProjectImportCount > 0) {
+        console.log(`Found ${crossProjectImportCount} cross-project import violations.`);
+    } else {
+        console.log("No cross-project import violations detected.");
+    }
 }
